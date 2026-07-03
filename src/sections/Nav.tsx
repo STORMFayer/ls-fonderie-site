@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Flame } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Menu, X, Flame, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import logo from '@/assets/logo.png'
 
 const links = [
-  { href: '#produits', label: 'Produits' },
-  { href: '#process', label: 'Processus' },
-  { href: '#avis', label: 'Avis' },
-  { href: '#contact', label: 'Contact' },
+  { id: 'produits', label: 'Produits' },
+  { id: 'process', label: 'Processus' },
+  { id: 'avis', label: 'Avis' },
+  { id: 'contact', label: 'Contact' },
 ]
+
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+}
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false)
@@ -29,21 +34,24 @@ export function Nav() {
       }`}
     >
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        <a href="#top" className="flex items-center gap-2.5 font-display font-bold text-white">
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2.5 font-display font-bold text-white cursor-pointer">
           <img src={logo} alt="LS Fonderie" className="w-8 h-8 object-contain" />
           LS Fonderie
-        </a>
+        </button>
 
         <nav className="hidden md:flex items-center gap-8">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="text-sm text-white/60 hover:text-white transition-colors font-medium">
+            <button key={l.id} onClick={() => scrollToId(l.id)} className="text-sm text-white/60 hover:text-white transition-colors font-medium cursor-pointer">
               {l.label}
-            </a>
+            </button>
           ))}
         </nav>
 
-        <div className="hidden md:block">
-          <Button size="sm" variant="gold" onClick={() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' })}>
+        <div className="hidden md:flex items-center gap-3">
+          <Link to="/login" className="text-white/40 hover:text-white text-xs uppercase tracking-[1.5px] font-semibold flex items-center gap-1.5 transition-colors">
+            <Lock size={12} /> Espace Employé
+          </Link>
+          <Button size="sm" variant="gold" onClick={() => scrollToId('contact')}>
             <Flame size={15} /> Commander
           </Button>
         </div>
@@ -63,15 +71,24 @@ export function Nav() {
           >
             <div className="flex flex-col gap-1 px-5 py-4">
               {links.map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="text-white/70 hover:text-white py-2.5 text-sm font-medium"
+                <button
+                  key={l.id}
+                  onClick={() => {
+                    scrollToId(l.id)
+                    setOpen(false)
+                  }}
+                  className="text-left text-white/70 hover:text-white py-2.5 text-sm font-medium cursor-pointer"
                 >
                   {l.label}
-                </a>
+                </button>
               ))}
+              <Link
+                to="/login"
+                onClick={() => setOpen(false)}
+                className="text-white/60 hover:text-white py-2.5 text-sm font-medium flex items-center gap-1.5"
+              >
+                <Lock size={13} /> Espace Employé
+              </Link>
             </div>
           </motion.nav>
         )}

@@ -1,26 +1,28 @@
-import { Nav } from '@/sections/Nav'
-import { Hero } from '@/sections/Hero'
-import { Stats } from '@/sections/Stats'
-import { Products } from '@/sections/Products'
-import { Process } from '@/sections/Process'
-import { Testimonials } from '@/sections/Testimonials'
-import { CTA } from '@/sections/CTA'
-import { Footer } from '@/sections/Footer'
+import { HashRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from '@/auth/AuthContext'
+import { ProtectedRoute } from '@/auth/ProtectedRoute'
+import { Home } from '@/pages/Home'
+import { Login } from '@/pages/Login'
+import { Dashboard } from '@/pages/Dashboard'
 
 function App() {
   return (
-    <>
-      <Nav />
-      <main>
-        <Hero />
-        <Stats />
-        <Products />
-        <Process />
-        <Testimonials />
-        <CTA />
-      </main>
-      <Footer />
-    </>
+    <HashRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </HashRouter>
   )
 }
 
