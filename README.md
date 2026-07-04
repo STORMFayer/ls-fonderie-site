@@ -96,6 +96,25 @@ Users → Add user**, avec **Auto Confirm User** coché et, dans **User Metadata
 { "full_name": "Prénom Nom", "discord": "pseudo#0001", "role": "employe" }
 ```
 
+### Notifications Discord
+
+Chaque commande passée (`/commander` ou `/marche-noir`) envoie automatiquement un
+message dans un salon Discord via une **Edge Function** (`supabase/functions/notify-order`) :
+
+- Le front appelle `notify-order` juste après `place_order`, avec seulement le numéro
+  de commande (pas le détail — évite qu'un client falsifie le contenu du message).
+- La fonction relit la commande via `service_role` (contourne les RLS côté serveur
+  uniquement) et poste un embed (client, contact, articles, total, type) sur l'URL de
+  webhook Discord stockée dans le secret `DISCORD_WEBHOOK_URL`.
+- Un échec de notification Discord n'empêche jamais la commande d'aboutir (appel best-effort).
+
+Configurer/modifier le webhook :
+
+```bash
+npx supabase secrets set DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
+npx supabase functions deploy notify-order --use-api
+```
+
 ### Variables d'environnement
 
 En local (`.env`, jamais commit) :
@@ -133,5 +152,5 @@ src/
   lib/supabase.ts    client + types Supabase
   App.tsx            routeur (HashRouter)
 supabase/migrations/  schéma SQL versionné (tables + RLS + fonctions RPC)
-supabase/functions/    Edge Functions (create-employee : création de compte, service_role)
+supabase/functions/    Edge Functions (create-employee, notify-order : service_role côté serveur)
 ```

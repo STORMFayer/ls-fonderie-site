@@ -66,6 +66,8 @@ export function OrderCatalogue({
     setNom('')
     setContact('')
     setMessage('')
+
+    supabase.functions.invoke('notify-order', { body: { numero: data } }).catch(() => {})
   }
 
   return (
