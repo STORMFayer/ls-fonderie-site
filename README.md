@@ -96,6 +96,19 @@ Users → Add user**, avec **Auto Confirm User** coché et, dans **User Metadata
 { "full_name": "Prénom Nom", "discord": "pseudo#0001", "role": "employe" }
 ```
 
+### Modifier / supprimer un employé
+
+Depuis `/admin/employees`, clique le crayon sur une ligne pour :
+- **Éditer** nom complet, Discord et rôle (RPC `update_employee`),
+- **Changer le mot de passe** (Edge Function `manage-employee`, action `set_password`),
+- **Supprimer le compte** (même fonction, action `delete` — supprime le compte Auth,
+  ce qui supprime le profil `employees` en cascade). Un admin ne peut pas supprimer
+  son propre compte (garde-fou anti-verrouillage).
+
+```bash
+npx supabase functions deploy manage-employee --use-api
+```
+
 ### Notifications Discord
 
 Chaque commande passée (`/commander` ou `/marche-noir`) envoie automatiquement un
@@ -155,5 +168,5 @@ src/
   lib/supabase.ts    client + types Supabase
   App.tsx            routeur (HashRouter)
 supabase/migrations/  schéma SQL versionné (tables + RLS + fonctions RPC)
-supabase/functions/    Edge Functions (create-employee, notify-order : service_role côté serveur)
+supabase/functions/    Edge Functions (create-employee, manage-employee, notify-order : service_role côté serveur)
 ```

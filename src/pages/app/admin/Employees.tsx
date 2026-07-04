@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Search, RefreshCw, Pencil, Check, X, UserPlus } from 'lucide-react'
+import { Search, RefreshCw, Pencil, Check, X, UserPlus, KeyRound, Trash2 } from 'lucide-react'
 import { supabase, type Employee } from '@/lib/supabase'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,9 +10,6 @@ export function Employees() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editDiscord, setEditDiscord] = useState('')
-  const [editRole, setEditRole] = useState<'admin' | 'employe'>('employe')
   const [prixMinerai, setPrixMinerai] = useState(60)
 
   const [showAdd, setShowAdd] = useState(false)
@@ -24,6 +21,19 @@ export function Employees() {
   const [addError, setAddError] = useState<string | null>(null)
   const [addSuccess, setAddSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editFullName, setEditFullName] = useState('')
+  const [editDiscord, setEditDiscord] = useState('')
+  const [editRole, setEditRole] = useState<'admin' | 'employe'>('employe')
+  const [editError, setEditError] = useState<string | null>(null)
+
+  const [newPassword, setNewPassword] = useState('')
+  const [passwordBusy, setPasswordBusy] = useState(false)
+  const [passwordMsg, setPasswordMsg] = useState<string | null>(null)
+
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -42,13 +52,67 @@ export function Employees() {
 
   function startEdit(e: Employee) {
     setEditingId(e.id)
+    setEditFullName(e.full_name)
     setEditDiscord(e.discord ?? '')
     setEditRole(e.role)
+    setEditError(null)
+    setNewPassword('')
+    setPasswordMsg(null)
+    setConfirmDelete(null)
+  }
+
+  function closeEdit() {
+    setEditingId(null)
   }
 
   async function saveEdit(id: string) {
-    await supabase.rpc('update_employee', { p_id: id, p_discord: editDiscord, p_role: editRole })
+    setEditError(null)
+    const { error } = await supabase.rpc('update_employee', {
+      p_id: id,
+      p_discord: editDiscord,
+      p_role: editRole,
+      p_full_name: editFullName,
+    })
+    if (error) {
+      setEditError("Impossible d'enregistrer les modifications.")
+      return
+    }
     setEditingId(null)
+    await load()
+  }
+
+  async function changePassword(id: string) {
+    if (newPassword.length < 8) {
+      setPasswordMsg('Mot de passe : 8 caractères minimum.')
+      return
+    }
+    setPasswordBusy(true)
+    setPasswordMsg(null)
+    const { data, error } = await supabase.functions.invoke('manage-employee', {
+      body: { action: 'set_password', employeeId: id, password: newPassword },
+    })
+    setPasswordBusy(false)
+    if (error || !data?.success) {
+      setPasswordMsg(data?.error ?? error?.message ?? 'Impossible de changer le mot de passe.')
+      return
+    }
+    setPasswordMsg('Mot de passe changé.')
+    setNewPassword('')
+  }
+
+  async function deleteEmployee(id: string) {
+    setDeleteBusy(true)
+    const { data, error } = await supabase.functions.invoke('manage-employee', {
+      body: { action: 'delete', employeeId: id },
+    })
+    setDeleteBusy(false)
+    if (error || !data?.success) {
+      setEditError(data?.error ?? error?.message ?? "Impossible de supprimer l'employé.")
+      setConfirmDelete(null)
+      return
+    }
+    setEditingId(null)
+    setConfirmDelete(null)
     await load()
   }
 
@@ -217,30 +281,68 @@ export function Employees() {
                   <div className="text-white text-sm font-bold">{e.total_minerais.toLocaleString('fr-FR')} minerais</div>
                   <div className="text-gold-light text-xs">{(e.total_minerais * prixMinerai).toLocaleString('fr-FR')} $</div>
                 </div>
-                <button onClick={() => startEdit(e)} className="text-white/30 hover:text-white p-1.5">
-                  <Pencil size={14} />
+                <button onClick={() => (editingId === e.id ? closeEdit() : startEdit(e))} className="text-white/30 hover:text-white p-1.5">
+                  {editingId === e.id ? <X size={14} /> : <Pencil size={14} />}
                 </button>
               </div>
 
               {editingId === e.id && (
-                <div className="flex flex-col sm:flex-row gap-2 mt-3 pt-3 border-t border-white/8">
-                  <input
-                    value={editDiscord}
-                    onChange={(ev) => setEditDiscord(ev.target.value)}
-                    placeholder="Discord (pseudo#0001)"
-                    className="flex-1 rounded-lg bg-white/5 border border-white/12 px-3 py-2 text-sm text-white outline-none focus:border-gold/50"
-                  />
-                  <select
-                    value={editRole}
-                    onChange={(ev) => setEditRole(ev.target.value as 'admin' | 'employe')}
-                    className="rounded-lg bg-white/5 border border-white/12 px-3 py-2 text-sm text-white outline-none focus:border-gold/50"
-                  >
-                    <option value="employe">Employé</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="gold" onClick={() => saveEdit(e.id)}><Check size={14} /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}><X size={14} /></Button>
+                <div className="flex flex-col gap-4 mt-3 pt-3 border-t border-white/8">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      value={editFullName}
+                      onChange={(ev) => setEditFullName(ev.target.value)}
+                      placeholder="Nom complet"
+                      className="flex-1 rounded-lg bg-white/5 border border-white/12 px-3 py-2 text-sm text-white outline-none focus:border-gold/50"
+                    />
+                    <input
+                      value={editDiscord}
+                      onChange={(ev) => setEditDiscord(ev.target.value)}
+                      placeholder="Discord (pseudo#0001)"
+                      className="flex-1 rounded-lg bg-white/5 border border-white/12 px-3 py-2 text-sm text-white outline-none focus:border-gold/50"
+                    />
+                    <select
+                      value={editRole}
+                      onChange={(ev) => setEditRole(ev.target.value as 'admin' | 'employe')}
+                      className="rounded-lg bg-white/5 border border-white/12 px-3 py-2 text-sm text-white outline-none focus:border-gold/50"
+                    >
+                      <option value="employe">Employé</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="gold" onClick={() => saveEdit(e.id)}><Check size={14} /> Enregistrer</Button>
+                    </div>
+                  </div>
+                  {editError && <p className="text-red-400 text-xs">{editError}</p>}
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-white/8">
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(ev) => setNewPassword(ev.target.value)}
+                      placeholder="Nouveau mot de passe (8 caractères min.)"
+                      className="flex-1 rounded-lg bg-white/5 border border-white/12 px-3 py-2 text-sm text-white outline-none focus:border-gold/50"
+                    />
+                    <Button size="sm" variant="ghost" disabled={passwordBusy} onClick={() => changePassword(e.id)}>
+                      <KeyRound size={13} /> {passwordBusy ? 'Changement...' : 'Changer le mot de passe'}
+                    </Button>
+                  </div>
+                  {passwordMsg && <p className={passwordMsg === 'Mot de passe changé.' ? 'text-emerald-400 text-xs' : 'text-red-400 text-xs'}>{passwordMsg}</p>}
+
+                  <div className="pt-3 border-t border-white/8">
+                    {confirmDelete === e.id ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-red-400 text-xs">Supprimer définitivement {e.full_name} ?</span>
+                        <Button size="sm" variant="danger" disabled={deleteBusy} onClick={() => deleteEmployee(e.id)}>
+                          {deleteBusy ? 'Suppression...' : 'Confirmer'}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>Annuler</Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(e.id)}>
+                        <Trash2 size={13} /> Supprimer l'employé
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
