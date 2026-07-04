@@ -5,7 +5,7 @@ import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/ls-fonderie-site/' : '/',
+  base: command === 'build' ? '/LS-Fonderie-LJLife/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

@@ -149,10 +149,11 @@ secrète (elle est protégée par les policies RLS), donc pas besoin d'un secret
 Un workflow (`.github/workflows/deploy.yml`) build et déploie automatiquement sur
 GitHub Pages à chaque push sur `main`.
 
-1. Crée le dépôt GitHub (ex: `ls-fonderie-site`) et pousse ce dossier dessus.
-2. Dans **Settings → Pages**, choisis la source **GitHub Actions**.
-3. Si le nom du dépôt est différent de `ls-fonderie-site`, mets à jour `base` dans
-   [vite.config.ts](vite.config.ts) pour qu'il corresponde à `/<nom-du-repo>/`.
+Dépôt : [STORMFayer/LS-Fonderie-LJLife](https://github.com/STORMFayer/LS-Fonderie-LJLife)
+— site en ligne sur **https://stormfayer.github.io/LS-Fonderie-LJLife/**
+
+Si tu renommes encore le dépôt, mets à jour `base` dans [vite.config.ts](vite.config.ts)
+pour qu'il corresponde à `/<nom-du-repo>/`.
 
 ## Structure
 
