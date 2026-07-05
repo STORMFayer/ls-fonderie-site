@@ -8,6 +8,15 @@ import { Card } from '@/components/ui/Card'
 import { Embers } from '@/components/Embers'
 import logo from '@/assets/logo.png'
 
+const TIMEOUT_MS = 10000
+
+function withTimeout<T>(promise: PromiseLike<T>, ms = TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ])
+}
+
 export function Login() {
   const { session, loading } = useAuth()
   const navigate = useNavigate()
@@ -23,21 +32,33 @@ export function Login() {
     setSubmitting(true)
     setError(null)
 
-    const { data: email, error: lookupError } = await supabase.rpc('get_login_email', { p_discord: discord })
+    try {
+      // A stale/expired session left over in this browser can wedge Supabase's internal
+      // auth lock and hang every subsequent call forever. Clear it locally (no network
+      // round-trip) before attempting a fresh login.
+      await withTimeout(supabase.auth.signOut({ scope: 'local' }), 3000).catch(() => {})
 
-    if (lookupError || !email) {
+      const { data: email, error: lookupError } = await withTimeout(
+        supabase.rpc('get_login_email', { p_discord: discord }),
+      )
+
+      if (lookupError || !email) {
+        setSubmitting(false)
+        setError('Identifiants incorrects.')
+        return
+      }
+
+      const { error: authError } = await withTimeout(supabase.auth.signInWithPassword({ email, password }))
       setSubmitting(false)
-      setError('Identifiants incorrects.')
-      return
+      if (authError) {
+        setError('Identifiants incorrects.')
+        return
+      }
+      navigate('/dashboard')
+    } catch {
+      setSubmitting(false)
+      setError('La connexion prend trop de temps. Réessaie (ou recharge la page).')
     }
-
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-    setSubmitting(false)
-    if (authError) {
-      setError('Identifiants incorrects.')
-      return
-    }
-    navigate('/dashboard')
   }
 
   return (

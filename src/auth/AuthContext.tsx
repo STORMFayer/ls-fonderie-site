@@ -16,14 +16,25 @@ const AuthContext = createContext<AuthState>({
   refreshEmployee: async () => {},
 })
 
+function withTimeout<T>(promise: PromiseLike<T>, ms = 10000): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ])
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [loading, setLoading] = useState(true)
 
   const loadEmployee = useCallback(async (userId: string) => {
-    const { data } = await supabase.from('employees').select('*').eq('id', userId).single()
-    setEmployee(data)
+    try {
+      const { data } = await withTimeout(supabase.from('employees').select('*').eq('id', userId).single())
+      setEmployee(data)
+    } catch {
+      setEmployee(null)
+    }
   }, [])
 
   const refreshEmployee = useCallback(async () => {
@@ -31,11 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, loadEmployee])
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session)
-      if (data.session) await loadEmployee(data.session.user.id)
-      setLoading(false)
-    })
+    withTimeout(supabase.auth.getSession())
+      .then(async ({ data }) => {
+        setSession(data.session)
+        if (data.session) await loadEmployee(data.session.user.id)
+      })
+      .catch(() => {
+        setSession(null)
+      })
+      .finally(() => setLoading(false))
 
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession)
