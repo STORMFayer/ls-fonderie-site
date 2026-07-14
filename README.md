@@ -49,7 +49,8 @@ Supabase Auth (mots de passe gérés nativement, jamais stockés en clair).
 
 **Pages admin** (`/admin/employees`, `/admin/orders`, `/admin/finances`,
 `/admin/journal`, `/admin/settings`) :
-- Employés : classement, recherche, édition discord/rôle.
+- Employés : classement, recherche, édition discord/rôle, fiche employé (notes
+  générales, avertissements, rendement).
 - Commandes : filtres par statut, changement de statut (livrée = archivée en journal
   puis supprimée, comme l'original).
 - Finances : revenus légal/noir, masse salariale, versement d'avances ou paiement complet.

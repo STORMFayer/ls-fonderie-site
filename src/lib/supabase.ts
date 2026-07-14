@@ -63,5 +63,16 @@ export interface JournalEntry {
   created_at: string
 }
 
+export type NoteCategory = 'general' | 'avertissement' | 'rendement'
+
+export interface EmployeeNote {
+  id: number
+  employee_id: string
+  category: NoteCategory
+  content: string
+  author: string
+  created_at: string
+}
+
 export const QUOTA_HEBDO = 1600
 export const MAX_AVANCE = 20000

@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Search, RefreshCw, Pencil, Check, X, UserPlus, KeyRound, Trash2 } from 'lucide-react'
+import { Search, RefreshCw, Pencil, Check, X, UserPlus, KeyRound, Trash2, FileText } from 'lucide-react'
 import { supabase, type Employee } from '@/lib/supabase'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { EmployeeFicheModal } from '@/components/EmployeeFicheModal'
 
 const medals = ['🥇', '🥈', '🥉']
 
@@ -34,6 +35,8 @@ export function Employees() {
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
+
+  const [ficheEmployee, setFicheEmployee] = useState<Employee | null>(null)
 
   async function load() {
     setLoading(true)
@@ -311,6 +314,7 @@ export function Employees() {
                     </select>
                     <div className="flex gap-2">
                       <Button size="sm" variant="gold" onClick={() => saveEdit(e.id)}><Check size={14} /> Enregistrer</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setFicheEmployee(e)}><FileText size={13} /> Fiche employé</Button>
                     </div>
                   </div>
                   {editError && <p className="text-red-400 text-xs">{editError}</p>}
@@ -351,6 +355,10 @@ export function Employees() {
           {filtered.length === 0 && <p className="text-white/30 text-center py-6">Aucun employé trouvé.</p>}
         </div>
       </Card>
+
+      {ficheEmployee && (
+        <EmployeeFicheModal employee={ficheEmployee} onClose={() => setFicheEmployee(null)} />
+      )}
     </div>
   )
 }
